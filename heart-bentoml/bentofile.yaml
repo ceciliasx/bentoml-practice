@@ -1,0 +1,17 @@
+# STEP 4 - BUILD config. `bentoml build` reads this and produces a versioned "Bento":
+# a self-contained package (code + model + dependency list) you can containerize and ship.
+service: "service:HeartService"   # <python file>:<class name>
+name: heart_service
+labels:
+  owner: me
+  stage: practice
+include:
+  - "service.py"                  # files to package (the CSV and train.py are NOT needed to serve)
+python:
+  packages:                       # dependencies installed inside the container
+    - scikit-learn==1.6.1
+    - pandas
+    - numpy
+    - pydantic
+models:
+  - "heart_clf:latest"            # pin the model version into the package

@@ -1,0 +1,8 @@
+# internal team document - never push
+framework_research_brief.md
+BENTOML_PROGRESS.md
+
+__pycache__/
+*.pyc
+.venv/
+venv/
