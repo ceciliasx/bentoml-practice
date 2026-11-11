@@ -20,4 +20,4 @@ class Rollout:
             print(f"server: interrupted at frame {i} ({type(e).__name__})",flush=True)
             raise
         finally:
-            print(f"server: loop closed after frame {i}",Flush=True)
+            print(f"server: loop closed after frame {i}",flush=True)
