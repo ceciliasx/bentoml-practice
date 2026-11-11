@@ -5,6 +5,9 @@ import uuid
 from typing import AsyncGenerator
 
 import bentoml
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+
+app = FastAPI()
 
 ENDED = ("done", "cancelled")
 
@@ -22,6 +25,8 @@ class Session:
         self.task = None
 
 @bentoml.service
+@bentoml.asgi_app(app, path="/live") #mounts fastapi under /live
+
 class Rollout:
     def __init__(self):
         self.sessions = {} #session_id -> Session
@@ -90,3 +95,22 @@ class Rollout:
                 i += 1
             if s.status in ENDED:
                 return
+
+    @app.websocket("/ws/{session_id}")
+    async def ws_frames(self, websocket: WebSocket, session_id: str, from_index: int = 0):
+        s = self.sessions[session_id]
+        await websocket.accept()
+        i = from_index
+        try:
+            while True:
+                async with s.changed:
+                    await s.changed.wait_for(lambda: len(s.frames) > i or s.status in ENDED)
+                while i < len(s.frames):
+                    await websocket.send_text(json.dumps(s.frames[i]))
+                    i += 1
+                if s.status in ENDED:
+                    await websocket.send_text(json.dumps({"event": "end", "status": s.status}))
+                    await websocket.close()
+                    return
+        except WebSocketDisconnect:
+            print(f"server: ws viewer of {s.id} left at frame {i}", flush=True)
